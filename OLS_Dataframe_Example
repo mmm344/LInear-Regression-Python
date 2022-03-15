@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 15 09:47:01 2022
+
+@author: matthewmccoy6
+"""
+
+import pandas as pd
+import numpy as np
+import itertools
+from itertools import chain, combinations
+import statsmodels.formula.api as smf
+import scipy.stats as scipystats
+import statsmodels.api as sm
+import statsmodels.stats.stattools as stools
+import statsmodels.stats as stats 
+from statsmodels.graphics.regressionplots import *
+import matplotlib.pyplot as plt
+import seaborn as sns
+import copy
+from sklearn.model_selection import train_test_split
+import math
+import time
+
+np.random.seed(0)
+x1 = np.random.normal(20, 3, 20)
+y0 = 5 + 0.5 * x1
+y1 = 5 + 0.5 * x1 + np.random.normal(0, 1, 20)
+
+lm = sm.OLS(y1, sm.add_constant(x1)).fit()
+print("The rsquared values is " + str(lm.rsquared))
+
+def results_summary_to_dataframe(results):
+    '''take the result of an statsmodel results table and transforms it into a dataframe'''
+    pvals = results.pvalues
+    coeff = results.params
+    conf_lower = results.conf_int()[0]
+    conf_higher = results.conf_int()[1]
+
+    results_df = pd.DataFrame({"pvals":pvals,
+                               "coeff":coeff,
+                               "conf_lower":conf_lower,
+                               "conf_higher":conf_higher
+                                })
+
+    #Reordering...
+    results_df = results_df[["coeff","pvals","conf_lower","conf_higher"]]
+    return results_df
+
+results_df = results_summary_to_dataframe(lm)
