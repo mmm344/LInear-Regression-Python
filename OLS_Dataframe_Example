@@ -61,3 +61,7 @@ def variable_dataframe(x,y,y_predict):
     return results_df
 
 results_df = results_summary_to_dataframe(lm)
+
+#add scatter plot
+plt.scatter(x1, y0)
+plt.show()
