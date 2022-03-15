@@ -48,4 +48,16 @@ def results_summary_to_dataframe(results):
     results_df = results_df[["coeff","pvals","conf_lower","conf_higher"]]
     return results_df
 
+def variable_dataframe(x,y,y_predict):
+    '''take the result of an statsmodel results table and transforms it into a dataframe'''
+
+    results_df = pd.DataFrame({"x":x,
+                               "y":y0,
+                               "y_predict":y1
+                                })
+
+    #Reordering...
+    results_df = results_df[["x","y","y_predict"]]
+    return results_df
+
 results_df = results_summary_to_dataframe(lm)
