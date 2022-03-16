@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 16 08:45:05 2022
+
+@author: matthewmccoy6
+"""
+
+"""
+This is an exercise in using ordinary least squares (OLS) and understanding
+the summary output. 
+"""
+
+import numpy as np 
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+
+
+#import the relevant spreadsheet
+file_name =  '/Users/matthewmccoy6/Desktop/PythonStats/SAT_Grad_Rate.xlsx'
+sheet = 'Sheet1'
+df = pd.read_excel(io=file_name, sheet_name=sheet)
+
+
+#set up your response and predictor variables, x and y, respectively
+y = df.Percent_Graduation_Rate
+x = df.Average_SAT
+
+
+#add a constant term to the predictor variable so we fit y =mx+b and not y = mx
+x = sm.add_constant(x)
+print(x.head())
+
+#perform the regression of the predictor on the response variable using sm.OLS
+est = sm.OLS(y,x)
+
+"""
+Another way of getting est is to use 
+
+est = smf.ols(formula = 'predictor ~ response', data = data_frame).fit()
+
+This allows the use to directly compare the two variables instead of what 
+was done above.
+"""
+
+#now fit the model
+est = est.fit()
+print(est.summary())
+
+#################################################
+"""
+Here is a summary of what OLS regression produces
+
+
+Dep. Variable: Which variable is the response variable
+
+Model: What model you are using to fit
+
+Method: How the parameters of the model were calculated
+
+No. Observations: The number of observations
+
+DF Residuals: The derees of freedom of the residuals
+
+DF Model: Number of parameters int ehmodel
+
+R-squared: The coeffeicient of determination. A statistical measure of how well
+            the regression line approximates the real data points
+Adj. R-squared: The above value adjusted based on the number of observations
+             and the degrees-of-freedom of the residuals
+F-statistic: A measure of how significant the fit is. The mean squared error
+             of the model divided by the mean squared error of the residuals
+Log-likelihood: The log of the likelihood function
+AIC: The Akaike Information Criterion. Adjusts the log-likelihood based on the 
+             number of observations and the complexity of the model
+BIC: The Bayesian Information Criterion. Similar to the AIC, but has a higher 
+             penalty for models with more parameters
+coef: The estimated value of the coefficient
+std err: The basic standard error of the estimate of the coefficient. Most 
+             sophisticated errors are also avaialble
+t: The t-statistic value. This is a measure of how statistically significant 
+             the coefficient is
+P > |t|: P-value that the null-hypothesis that the coefficient = 0 is true. 
+             If it is less than the confidence level, often 0.05, it indicates
+             that there is a statistically significant relationship between
+             the term and the response
+[95.0% Conf. Interval]: The lower and upper values of the 95% confidence '
+             interval
+Skewness: A measure of the symmetry of the data about the mean.
+             Normally-distributed errors should be symmetrically distributed
+             about the mean (equal amounts above and below) 
+Kurtosis: A measure fo the shape of the distribution. Compares the amount of
+             data close to the mean with those far away from the mean
+             (in the tails)
+Omnibus: D'Angostino's test. It provides a compbined statistical test for the
+             presence of skewness and kurtosis
+Prob (Omnibus): The above statistic turned into a probability
+Jarque-Bera (JB): A different test of the skewness and kurtosis
+Prob (JB): The above statistic turned into a probability
+Durbin-Watson: A test for the presence of autocorrelation (that the errors
+             are not independent). Often important in time-series analysis
+Cond. No: A test for multicollinearity (if in a fit with mlutiple parameters,
+             the parameters are related with one another)
+"""
+
+#################################################
+
+#Find the parameters of the linear model
+"""
+The output from print(est.summary()) has produced two variable estimates:
+  const and GNP
+"""  
+
+#Create a sample of 10^k points (k=2 is fine) so we can graph the trend line
+x_sample = np.linspace(x.Average_SAT.min(),x.Average_SAT.max(),1000)[:,np.newaxis]
+x_sample = sm.add_constant(x_sample)
+
+#create y_hat_sample - the y_hat values based on these x sample points
+y_hat_sample = est.predict(x_sample)
+#plt.scatter(x.Average_SAT, y, alpha = 0.3)
+
+#label your axes
+#plt.xlabel("Average SAT score")
+#plt.ylabel("Six-year percentage graduation rate")
+
+#plot line
+#plt.plot(x_sample[:,1], y_hat_sample, 'r', alpha = 0.9)
+
+
+
+#################################################
+"""
+Let us compute the 
+    1. Residuals
+    2. Studentized residuals
+    3. Standardized residuals
+    4. Leverage
+    5. Cook's distance
+"""
+influence = est.get_influence()
+
+
+residuals = pd.DataFrame({'Residuals': influence.resid})
+
+studentized_residuals= pd.DataFrame({'Studentized_Residuals': influence.resid_studentized_external})
+
+standardized_residuals= pd.DataFrame({'Standardized_Residuals': influence.resid_studentized_internal})
+
+leverage = pd.DataFrame({'Influence_Matrix': influence.hat_matrix_diag})
+
+
+cooks_dist = influence.cooks_distance
+
+#label your axes
+#plt.xlabel("Averate SAT score")
+#plt.ylabel("Residual")
+
+#plot line
+#plt.scatter(x.Average_SAT, residuals_df, alpha = 0.3)
+
+
+# Compute the influence to get Cook's distance
+inf = influence
+
+# cooks_distance is an attribute of incluence, here C, not sure about P (p-value maybe?)
+C, P = cooks_dist
+def plot_cooks_distance(c):
+    _, ax = plt.subplots(figsize=(9,6))
+    ax.stem(c, markerfmt=",")
+    ax.set_xlabel("instance")
+    ax.set_ylabel("distance")
+    ax.set_title("Cook's Distance Outlier Detection")
+    return ax
+
+
+#plot_cooks_distance(C)
+C = pd.DataFrame({'CooksDistance': C})
+
+
+plt.scatter(x.Average_SAT,C)
+plt.xlabel('Average SAT')
+plt.ylabel('Cooks Distance')
+plt.show()
+
+
