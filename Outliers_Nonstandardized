@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 
 
 #import the relevant spreadsheet
-file_name =  '/Users/matthewmccoy6/Desktop/PythonStats/RegressionData.xlsx'
+file_name =  '/Users/matthewmccoy6/Desktop/PythonStats/Projected and Actual Revenue/RegressionData.xlsx'
 sheet = 'Sheet1'
 df = pd.read_excel(io=file_name, sheet_name=sheet)
 
@@ -229,6 +229,31 @@ plt.ylabel(yy)
 plt.plot(x_sample[:,1], y_hat_sample, 'b', alpha = 0.9)
 plt.plot(x.Projected_Revenue, y_hat_sample1+resid_threshhold*np.std(residuals.Residuals), 'r', alpha = 1)
 plt.plot(x.Projected_Revenue, y_hat_sample1-resid_threshhold*np.std(residuals.Residuals), 'r', alpha = 1)
+
+
+
+###############################################################################
+
+line_df = pd.DataFrame({'Projected Revenue': x.Projected_Revenue,
+                        'Actual Revenue':  y,
+                        'UpperLIne': y_hat_sample1+resid_threshhold*np.std(residuals.Residuals),
+                        'LowerLine': y_hat_sample1-resid_threshhold*np.std(residuals.Residuals)})
+
+#save as csv 
+line_df.to_csv('ResidualZone.csv', encoding='utf-8')
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
