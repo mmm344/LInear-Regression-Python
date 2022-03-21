@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar 18 11:49:00 2022
+
+@author: matthewmccoy6
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar 18 11:07:29 2022
+
+@author: matthewmccoy6
+"""
+
+import numpy as np
+from scipy.optimize import curve_fit
+import uncertainties as unc
+import matplotlib.pyplot as plt
+from scipy import stats
+import pandas as pd 
+import uncertainties.unumpy as unp
+
+url = 'http://apmonitor.com/che263/uploads/Main/stats_data.txt'
+
+#import the relevant spreadsheet
+file_name =  '/Users/matthewmccoy6/Desktop/PythonStats/RegressionData.xlsx'
+sheet = 'Sheet1'
+df = pd.read_excel(io=file_name, sheet_name=sheet)
+
+
+#set up your response and predictor variables, x and y, respectively
+y = df.Actual_Revenue
+x = df.Projected_Revenue
+n = len(y)
+
+def f(x,a,b):
+    return a*x+b
+
+popt,pcov = curve_fit(f,x,y)
+
+#retrieve parameter values
+a = popt[0]
+b = popt[1]
+print('Optimal Values')
+print('a: ' + str(a))
+print('b: ' + str(b))
+
+
+#calculate the parameter confidence interval
+a,b = unc.correlated_values(popt, pcov)
+print('Uncertainty')
+print('a: ' + str(a))
+print('b: ' + str(b))
+
+#plot the data
+plt.scatter(x,y,s=3, label='Data')
+
+#calculuate regression confidence interval 
+px = np.linspace(x.min(),x.max(),100)
+py = a*px +b
+nom = unp.nominal_values(py)
+std = unp.std_devs(py)
+
+def preband(x, xd, yd, p, func, conf = 0.95):
+    #x = request points
+    #xd = x data
+    #yd = y data
+    #p = parameters
+    #func = function
+    alpha = 1.0 - conf #significance
+    N = xd.size#data sample size
+    var_n = len(p)  #number of parameters
+    q = stats.t.ppf(alpha/2.0, N-var_n)  #Quantile of student's t distribution for p = (1-alpha/2)
+    se = np.sqrt(1. / (n-var_n)* np.sum((yd - func(xd, *p))**2))#stdev of an individaul measurement
+    #Auxiliary definitions
+    sx = (x-xd.mean())**2
+    sxd = np.sum((xd-xd.mean())**2)
+    #predicted values (best-fit model)
+    yp = func(x, *p)
+    #prediction band 
+    dy = q*se * np.sqrt(1.0 + (1.0/N) + (sx/sxd))
+    #upper and lower prediction bands
+    lpb, upb = yp - dy, yp + dy
+    return lpb, upb 
+#plot the regression
+lpb, upb = preband(px, x, y, popt, f, conf=0.95)
+plt.plot(px, nom, c='black', label='y=a x + b')
+
+#uncertainty lines (95% confidence)
+plt.plot(px, nom + 1.96*std, c='orange', label = '95% confidence region')
+plt.plot(px, nom - 1.96*std, c='orange')
+
+#prediction band (95% confidence)
+plt.plot(px, lpb, 'k--', label='95% prediction band')
+plt.plot(px, upb, 'k--')
+plt.ylabel('y')
+plt.xlabel('x')
+
+#save the figure
+plt.savefig('regression.png')
+plt.legend(loc="upper left")
+plt.show()
+
+
+########################################################################
+"""
+Create a dataframe to save the prediction band and the confidence interval
+"""
+
+uncert_predict_lines_df = pd.DataFrame({'UpperPrediction': upb,
+                                        'LowerPrediction': lpb,
+                                  'UpperUncertainty': nom + 1.96*std,
+                                  'LowerUncertainty': nom - 1.96*std})
+uncert_predict_lines_df.to_csv('Uncertainty_and_Prediction.csv', encoding='utf-8')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
