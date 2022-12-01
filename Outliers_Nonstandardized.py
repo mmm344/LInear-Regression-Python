@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed Mar 16 08:45:05 2022
 
@@ -15,6 +13,12 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
+
+#import for FastAPI
+from typing import Union
+from fastapi import FastAPI
+import json
+from json import JSONEncoder
 
 
 
@@ -205,7 +209,6 @@ OLS_summary_df.loc[abs(OLS_summary_df['Residuals'])< resid_threshhold*np.std(res
 
 Outlier_df = OLS_summary_df.loc[OLS_summary_df['Possible Outlier?'] == 'Yes']
 plt.scatter(Outlier_df.ProjectedRevenue,Outlier_df.StandardizedResiduals, color = 'red')
-plt.show()
 
 
 
@@ -234,14 +237,22 @@ plt.plot(x.Projected_Revenue, y_hat_sample1-resid_threshhold*np.std(residuals.Re
 
 ###############################################################################
 
-line_df = pd.DataFrame({'Projected Revenue': x.Projected_Revenue,
-                        'Actual Revenue':  y,
-                        'UpperLIne': y_hat_sample1+resid_threshhold*np.std(residuals.Residuals),
-                        'LowerLine': y_hat_sample1-resid_threshhold*np.std(residuals.Residuals)})
+# x.Projected_Revenue etc. are Pandas.series format. So, convert to numpy and then json type
+app = FastAPI()
 
-#save as csv 
-line_df.to_csv('ResidualZone.csv', encoding='utf-8')
+class NumpyArrayEncoder(JSONEncoder): 
+    def default(self, obj): 
+        if isinstance(obj, np.ndarray): 
+            return obj.tolist() 
+        return JSONEncoder.default(self, obj)
 
+@app.get("/")
+
+def read_root(): 
+    return {'Projected Revenue': json.dumps(x.Projected_Revenue.tolist(), cls=NumpyArrayEncoder), 
+            'Actual Revenue': json.dumps(y.tolist(), cls=NumpyArrayEncoder), 
+            'UpperLIne': json.dumps((y_hat_sample1+resid_threshhold*np.std(residuals.Residuals)).tolist(), cls=NumpyArrayEncoder), 
+            'LowerLine': json.dumps((y_hat_sample1-resid_threshhold*np.std(residuals.Residuals)).tolist(), cls=NumpyArrayEncoder)}
 
 
 
